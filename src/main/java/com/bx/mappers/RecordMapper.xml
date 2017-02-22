@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bx.dao.RecordDao">
+
+<resultMap type="Record" id="RecordResult">
+    <result column="record_id" property="recordId" />
+    <result column="user_id" property="userId" />
+    <result column="video_id" property="videoId" />
+    <result column="duration" property="duration" />
+    <result column="operator" property="operator" />
+    <result column="browser" property="browser" />
+    <result column="system" property="system" />
+    <result column="time" property="time" />
+    <result column="palyed_times" property="playedTimes" />
+</resultMap>
+
+<insert id="addRecord" parameterType="Record">
+    insert into t_record values(null, #{userId}, #{videoId}, #{time}, #{duration}, #{playedTimes}, #{operator}, #{browser}, #{system}, now())
+</insert>
+
+<select id="getDailyChart" resultType="Map">
+    select count(video_id) as num, video_id as videoId
+    from t_record 
+    where DATE_FORMAT(created_time,'%Y-%m-%d')  = DATE_FORMAT(#{date},'%Y-%m-%d') group by video_id
+</select>
+
+<select id="getLastedRecordByVideoId" parameterType="Map" resultType="Record">
+    select * from t_record where video_id = #{videoId} and user_id = #{userId} order by created_time DESC limit 0,1
+</select>
+
+</mapper>

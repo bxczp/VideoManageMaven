@@ -1,0 +1,9 @@
+#video {
+	position: absolute;
+	clip: rect(0 0 0 0);
+}
+
+.info {
+	margin-right: 50px;
+	margin-left: 50px;
+}

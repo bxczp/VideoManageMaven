@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bx.dao.VideoDao">
+
+<resultMap type="Video" id="VideoResult">
+    <result column="video_id" property="videoId" />
+    <result column="video_name" property="videoName" />
+    <result column="played_times" property="playedTimes" />
+    <result column="is_published" property="isPublished" />
+    <result column="updated_time" property="updatedTime" />
+    <result column="video_path" property="videoPath" />
+    <result column="is_deleted" property="isDeleted" />
+    <collection property="tags" ofType="Tag" javaType="java.util.List">
+        <id property="tagId" column="tag_id" />
+        <result property="tagName" column="tag_name"/>
+    </collection>
+</resultMap>
+
+    <select id="getVideoList" parameterType="Map" resultMap="VideoResult">
+        select * from t_video v
+        <where>
+            <if test="videoOrTagName != null and videoOrTagName != '' ">
+                v.video_name like #{videoOrTagName} or v.video_id IN (select distinct(video_id) from t_video_tag where tag_id IN (select tag_id from t_tag where tag_name like #{videoOrTagName}))
+            </if>
+            and v.is_deleted = 0
+        </where>
+        order by v.updated_time desc
+        <if test="start != null and size != null">
+            limit #{start}, #{size}
+        </if>
+    </select>
+
+    <select id="getVideoListCount" parameterType="Map" resultType="Integer">
+        select count(*) from t_video v
+        <where>
+            <if test="videoOrTagName != null and videoOrTagName != '' ">
+                v.video_name like #{videoOrTagName} or v.video_id IN (select distinct(video_id) from t_video_tag where tag_id IN (select tag_id from t_tag where tag_name like #{videoOrTagName}))
+            </if>
+            and v.is_deleted = 0
+        </where>
+    </select>
+
+    <insert id="addVideo" parameterType="Video" useGeneratedKeys="true" keyProperty="videoId">
+        insert into t_video
+        values(null,#{videoName},#{videoPath},#{playedTimes},0,0,now())
+    </insert>
+
+    <insert id="addVideoTag" parameterType="Map">
+        insert into t_video_tag(video_id, tag_id)
+        values
+        <if test="tagIds != null and tagIds != '' ">
+            <foreach collection="tagIds" item="item" index="index" separator="," >
+                (#{videoId},#{item})
+            </foreach>
+        </if>
+    </insert>
+
+    <select id="checkVideoName" parameterType="String" resultType="Integer">
+        select count(*) from t_video where video_name = #{videoName}
+        <if test="videoId != '' and videoId != null">
+           and video_id != #{videoId}
+        </if>
+        and is_deleted = 0
+    </select>
+
+    <select id="getVideoById" parameterType="Integer" resultMap="VideoResult">
+        select * from t_video where video_id = #{videoId} and is_deleted = 0
+    </select>
+
+    <select id="getVideoByIdWithoutDelete" parameterType="Integer" resultMap="VideoResult">
+        select * from t_video where video_id = #{videoId}
+    </select>
+
+    <update id="updatePalyTimes">
+        update t_video set played_times = played_times + 1 where video_id = #{videoId} and is_deleted = 0
+    </update>
+
+    <update id="deleteVideo" parameterType="Integer">
+        update t_video set is_deleted = 1 where video_id = #{videoId}
+    </update>
+
+    <update id="updatePublishVideo" parameterType="Integer">
+        update t_video set is_published = 1 where video_id = #{videoId} and is_deleted = 0
+    </update>
+
+    <update id="updateWithdrawVideo" parameterType="Integer">
+        update t_video set is_published = 0 where video_id = #{videoId} and is_deleted = 0
+    </update>
+
+    <select id="getPlayedTimes" parameterType="Integer" resultType="Integer">
+        select played_times from t_video where video_id = #{videoId} and is_deleted = 0
+    </select>
+    
+    
+    <update id="updateVideo" parameterType="Video">
+        update t_video set video_name = #{videoName}, video_path = #{videoPath}, updated_time = now()  where video_id = #{videoId} 
+    </update>
+    
+    <delete id="deleteVideoTag" parameterType="Integer">
+        delete from t_video_tag where video_id = #{videoId}
+    </delete>
+</mapper>
